@@ -1,0 +1,16 @@
+<Page
+    x:Class="GW40KArmyTracker.Pages.UnitsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="24">
+        <StackPanel Spacing="12">
+            <TextBlock Text="{Binding Title}" Style="{ThemeResource TitleTextBlockStyle}" />
+            <TextBlock Text="Unit catalog / roster editing UI goes here."
+                       TextWrapping="Wrap" />
+        </StackPanel>
+    </Grid>
+</Page>
