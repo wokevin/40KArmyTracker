@@ -28,6 +28,12 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
+                <NavigationViewItem Content="Rosters" Tag="rosters">
+                    <NavigationViewItem.Icon>
+                        <SymbolIcon Symbol="List" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
                 <NavigationViewItem Content="Armies" Tag="armies">
                     <NavigationViewItem.Icon>
                         <SymbolIcon Symbol="Library" />

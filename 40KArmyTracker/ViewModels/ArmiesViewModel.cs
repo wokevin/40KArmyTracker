@@ -15,8 +15,7 @@ namespace GW40KArmyTracker.ViewModels
 
         public ArmiesViewModel()
         {
-            _parser = new BattleScribeParser();
-            _settings = AppSettings.Load();
+            _settings = AppSettings.Instance;
 
             Catalogs = new ObservableCollection<Catalog>();
             Categories = new ObservableCollection<Category>();
@@ -473,7 +472,7 @@ namespace GW40KArmyTracker.ViewModels
 
         public void Refresh()
         {
-            _settings.DataSourceFolder = AppSettings.Load().DataSourceFolder;
+            AppSettings.Reload();
             LoadCatalogs();
         }
 

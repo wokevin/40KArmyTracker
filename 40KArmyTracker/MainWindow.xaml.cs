@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using GW40KArmyTracker.Pages;
+using GW40KArmyTracker.Views;
 
 namespace GW40KArmyTracker
 {
@@ -37,6 +38,7 @@ namespace GW40KArmyTracker
             var pageType = tag switch
             {
                 "home" => typeof(HomePage),
+                "rosters" => typeof(RostersPage),
                 "armies" => typeof(ArmiesPage),
                 "units" => typeof(UnitsPage),
                 "settings" => typeof(SettingsPage),

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="GW40KArmyTracker.Dialogs.NewRosterDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Create New Roster"
+    PrimaryButtonText="Create"
+    CloseButtonText="Cancel"
+    PrimaryButtonClick="CreateButton_Click"
+    DefaultButton="Primary">
+
+    <StackPanel Spacing="12">
+        <TextBox x:Name="RosterNameTextBox" Header="Roster Name" PlaceholderText="e.g., Tournament List"/>
+
+        <ComboBox x:Name="ArmyComboBox" Header="Army" PlaceholderText="Select an army">
+            <!-- Items populated dynamically from catalog files -->
+        </ComboBox>
+
+        <NumberBox x:Name="PointLimitNumberBox" Header="Point Limit" Value="2000" Minimum="0" SpinButtonPlacementMode="Inline"/>
+    </StackPanel>
+</ContentDialog>

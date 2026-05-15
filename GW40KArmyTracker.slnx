@@ -4,9 +4,12 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="40KArmyTracker (Package)/GW40KArmyTracker (Package).wapproj" Type="c7167f0d-bc9f-4e6e-afe1-012c56b48db5">
-    <Deploy />
-  </Project>
+  <Folder Name="/Solution Items/">
+    <File Path="../CS243/week2/PersonalRepo/src/WH40KDataSheetParser.py" />
+    <File Path="../CS243/week2/PersonalRepo/src/WH40KDataSheetViewer.py" />
+    <File Path="../CS243/week2/PersonalRepo/src/WH40KModels.py" />
+    <File Path="../CS243/week2/PersonalRepo/src/WH40KRosterHandler.py" />
+  </Folder>
   <Project Path="40KArmyTracker/GW40KArmyTracker.csproj">
     <Platform Solution="*|ARM64" Project="ARM64" />
     <Platform Solution="*|x64" Project="x64" />

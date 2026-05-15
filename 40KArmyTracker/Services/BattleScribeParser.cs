@@ -1,10 +1,13 @@
+using GW40KArmyTracker.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Xml.Linq;
-using GW40KArmyTracker.Models;
 
 namespace GW40KArmyTracker.Services
 {
@@ -13,14 +16,65 @@ namespace GW40KArmyTracker.Services
         private static readonly XNamespace CatNs = "http://www.battlescribe.net/schema/catalogueSchema";
         private static readonly XNamespace GstNs = "http://www.battlescribe.net/schema/gameSystemSchema";
 
-        private Dictionary<string, Category> _gameSystemCategories = new();
+        private static BattleScribeParser? _instance;
+        public static BattleScribeParser Instance => _instance ??= new BattleScribeParser();
+
+        private Dictionary<string, Category>? _gameSystemCategories;
+        private Dictionary<string, Category> GameSystemCategories
+        {
+            get
+            {
+                if (_gameSystemCategories == null || _gameSystemCategories.Count == 0)
+                {
+                    _gameSystemCategories = new Dictionary<string, Category>();
+
+                    string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                    string battlescribePath = Path.Combine(baseDir, "data");
+
+                    if (Directory.Exists(battlescribePath))
+                    {
+                        foreach (string file in Directory.GetFiles(battlescribePath, "*.gst"))
+                        {
+                            Task.Run(() => ParseGameSystemFile(file));
+                        }
+                        foreach (string file in Directory.GetFiles(battlescribePath, "*.gstz"))
+                        {
+                            Task.Run(() => ParseCompressedGameSystemFile(file));
+                        }
+                    }
+                }
+                return _gameSystemCategories;
+            }
+        }
+        private List<string>? _factionNames;
+        private readonly PythonDataService _pythonService = new();
 
         private const string ExclusionKeyword = "Faction";
+
+        private BattleScribeParser() { }
+
+        public async Task<List<string>> GetFactionsAsync()
+        {
+            if (_factionNames == null || _factionNames.Count == 0)
+            {
+                _factionNames = new List<string>();
+                _factionNames.AddRange(GameSystemCategories.Values
+                    .Where(c => c.IsFaction)
+                    .Select(c => c.Name)
+                    .Where(name => !string.IsNullOrEmpty(name))
+                    .Distinct());
+
+//#TODO : Chaos needs to be handled better - how to get the God included...
+
+            }
+
+            return _factionNames;
+        }
 
         public List<Catalog> LoadCatalogsFromFolder(string folderPath)
         {
             List<Catalog> catalogs = new();
-            _gameSystemCategories.Clear();
+            GameSystemCategories.Clear();
 
             if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath))
                 return catalogs;
@@ -53,7 +107,7 @@ namespace GW40KArmyTracker.Services
 
         public List<Category> GetBattlefieldRoles()
         {
-            return _gameSystemCategories.Values
+            return GameSystemCategories.Values
                 .Where(c => !c.IsFaction)
                 .OrderBy(c => c.Name)
                 .ToList();
@@ -117,8 +171,7 @@ namespace GW40KArmyTracker.Services
                     continue;
 
                 bool isFaction = name.StartsWith("Faction:", StringComparison.OrdinalIgnoreCase) ||
-                                 name.Contains(ExclusionKeyword) ||
-                                 catElement.Attribute("hidden")?.Value == "true";
+                                 name.Contains(ExclusionKeyword);
 
                 Category category = new()
                 {
@@ -127,7 +180,7 @@ namespace GW40KArmyTracker.Services
                     IsFaction = isFaction
                 };
 
-                _gameSystemCategories[id] = category;
+                GameSystemCategories[id] = category;
             }
         }
 
@@ -184,7 +237,7 @@ namespace GW40KArmyTracker.Services
                 IsGameSystem = root.Name.LocalName == "gameSystem"
             };
 
-            catalog.Categories = _gameSystemCategories.Values
+            catalog.Categories = GameSystemCategories.Values
                 .Where(c => !c.IsFaction)
                 .OrderBy(c => c.Name)
                 .ToList();
@@ -636,6 +689,76 @@ namespace GW40KArmyTracker.Services
                 }
             }
             return 0;
+        }
+    }
+    internal class PythonDataService
+    {
+        private readonly string _pythonPath;
+        private readonly string _moduleDir;
+
+        public PythonDataService()
+        {
+            _pythonPath = "python";
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            DirectoryInfo? dir = new DirectoryInfo(baseDir);
+            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "pythonSrc")))
+            {
+                dir = dir.Parent;
+            }
+            _moduleDir = dir != null 
+                ? Path.Combine(dir.FullName, "pythonSrc").TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                : baseDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        public async Task<string> GetFactionsAsync()
+        {
+            return await CallPythonFunctionAsync("get_factions()");
+        }
+
+        public async Task<string> GroupFactionsByArmyAsync()
+        {
+            return await CallPythonFunctionAsync(@"factions = get_factions(); group_factions_by_army(factions)");
+        }
+
+        public async Task<string> ParseUnitsAsync(string catalogFilePath)
+        {
+            return await CallPythonFunctionAsync($@"from pathlib import Path; gst_rules, battle_sizes = load_gst_data(); parse_units(Path(r'{catalogFilePath}'), gst_rules)");
+        }
+
+        public async Task<string> LoadGstDataAsync()
+        {
+            return await CallPythonFunctionAsync("load_gst_data()");
+        }
+
+        private async Task<string> CallPythonFunctionAsync(string functionCall)
+        {
+            string pythonCode = $"import sys; sys.path.insert(0, r'{_moduleDir}'); from WH40KDataSheetParser import *; result = {functionCall}; print('\\n'.join(map(str, result)) if isinstance(result, (list, tuple)) else result)";
+
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = _pythonPath,
+                Arguments = $"-c \"{pythonCode}\"",
+                RedirectStandardInput = true ,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using Process process = new Process { StartInfo = startInfo };
+            process.Start();
+
+            string output = await process.StandardOutput.ReadToEndAsync();
+            string error = await process.StandardError.ReadToEndAsync();
+
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                throw new Exception($"Python error: {error}");
+            }
+
+            return output.Trim();
         }
     }
 }

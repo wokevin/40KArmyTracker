@@ -1,4 +1,4 @@
-using System;
+    using System;
 using System.IO;
 using System.Text.Json;
 using Windows.Storage;
@@ -8,6 +8,8 @@ namespace GW40KArmyTracker.Services
     public class AppSettings
     {
         private const string SettingsFileName = "settings.json";
+        private static AppSettings? _instance;
+        private static readonly object _lock = new object();
 
         public string DataSourceFolder { get; set; } = string.Empty;
         public string RostersSaveFolder { get; set; } = string.Empty;
@@ -17,7 +19,25 @@ namespace GW40KArmyTracker.Services
         private static string SettingsFilePath => Path.Combine(AppDataPath, SettingsFileName);
         public static string DefaultRostersFolder => Path.Combine(AppDataPath, "Rosters");
 
-        public static AppSettings Load()
+        public static AppSettings Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    lock (_lock)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = Load();
+                        }
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        private static AppSettings Load()
         {
             try
             {
@@ -58,6 +78,14 @@ namespace GW40KArmyTracker.Services
 
             string json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(SettingsFilePath, json);
+        }
+
+        public static void Reload()
+        {
+            lock (_lock)
+            {
+                _instance = Load();
+            }
         }
     }
 }
