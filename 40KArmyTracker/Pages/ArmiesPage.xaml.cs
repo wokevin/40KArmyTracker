@@ -38,7 +38,7 @@ namespace GW40KArmyTracker.Pages
 
         private void CatalogListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (CatalogListView.SelectedItem is Catalog selectedCatalog)
+            if (sender is ListView listView && listView.SelectedItem is Catalog selectedCatalog)
             {
                 _viewModel.SelectedCatalog = selectedCatalog;
             }

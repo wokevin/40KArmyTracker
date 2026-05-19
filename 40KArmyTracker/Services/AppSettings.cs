@@ -1,7 +1,6 @@
-    using System;
+using System;
 using System.IO;
 using System.Text.Json;
-using Windows.Storage;
 
 namespace GW40KArmyTracker.Services
 {
@@ -11,11 +10,11 @@ namespace GW40KArmyTracker.Services
         private static AppSettings? _instance;
         private static readonly object _lock = new object();
 
-        public string DataSourceFolder { get; set; } = string.Empty;
+        public string DefaultDataSourceFolder { get; set; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
         public string RostersSaveFolder { get; set; } = string.Empty;
         public int DefaultPointsLimit { get; set; } = 2000;
 
-        private static string AppDataPath => ApplicationData.Current.LocalFolder.Path;
+        private static string AppDataPath => Path.Combine( Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GW40KArmyTracker" );
         private static string SettingsFilePath => Path.Combine(AppDataPath, SettingsFileName);
         public static string DefaultRostersFolder => Path.Combine(AppDataPath, "Rosters");
 

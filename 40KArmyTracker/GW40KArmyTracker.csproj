@@ -14,7 +14,6 @@
   <ItemGroup>
     <None Remove="Dialogs\NewRosterDialog.xaml" />
     <None Remove="Pages\RosterEditorPage.xaml" />
-    <None Remove="Views\RostersPage.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,9 +32,6 @@
 
   <ItemGroup>
     <Page Update="Dialogs\NewRosterDialog.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Update="Views\RostersPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
@@ -60,6 +56,9 @@
       <Link>data\%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Views\" />
   </ItemGroup>
 
     <!-- Publish Properties -->

@@ -16,6 +16,7 @@ namespace GW40KArmyTracker.ViewModels
         public ArmiesViewModel()
         {
             _settings = AppSettings.Instance;
+            _parser = BattleScribeParser.Instance;
 
             Catalogs = new ObservableCollection<Catalog>();
             Categories = new ObservableCollection<Category>();
@@ -29,6 +30,7 @@ namespace GW40KArmyTracker.ViewModels
         }
 
         public ObservableCollection<Catalog> Catalogs { get; }
+        public ObservableCollection<CatalogGroup> GroupedCatalogs { get; } = new ObservableCollection<CatalogGroup>();
         public ObservableCollection<Category> Categories { get; }
         public ObservableCollection<Unit> Units { get; }
         public ObservableCollection<WargearOption> WargearOptions { get; }
@@ -181,19 +183,19 @@ namespace GW40KArmyTracker.ViewModels
             TotalCost = 0;
             ClearDetails();
 
-            if (string.IsNullOrEmpty(_settings.DataSourceFolder))
+            if (string.IsNullOrEmpty(_settings.DefaultDataSourceFolder))
             {
                 HasNoCatalogs = true;
                 StatusMessage = "No data folder configured. Go to Settings to select your BattleScribe data folder.";
                 return;
             }
 
-            List<Catalog> loadedCatalogs = _parser.LoadCatalogsFromFolder(_settings.DataSourceFolder);
+            List<Catalog> loadedCatalogs = _parser.LoadCatalogsFromFolder(_settings.DefaultDataSourceFolder);
 
             if (loadedCatalogs.Count == 0)
             {
                 HasNoCatalogs = true;
-                StatusMessage = $"No .cat or .catz files found in: {_settings.DataSourceFolder}";
+                StatusMessage = $"No .cat or .catz files found in: {_settings.DefaultDataSourceFolder}";
                 return;
             }
 
@@ -204,6 +206,27 @@ namespace GW40KArmyTracker.ViewModels
 
             HasNoCatalogs = false;
             StatusMessage = $"Loaded {Catalogs.Count} catalog(s) with {Catalogs.Sum(c => c.Units.Count)} total units.";
+
+            // Group catalogs by SuperCategory
+            GroupedCatalogs.Clear();
+            IEnumerable<IGrouping<string, Catalog>> grouped = loadedCatalogs
+                .GroupBy(c => c.SuperCategory)
+                .OrderBy(g => g.Key);
+
+            foreach (IGrouping<string, Catalog> group in grouped)
+            {
+                CatalogGroup catalogGroup = new CatalogGroup
+                {
+                    SuperCategory = group.Key
+                };
+                
+                foreach (Catalog catalog in group.OrderBy(c => c.Name))
+                {
+                    catalogGroup.Catalogs.Add(catalog);
+                }
+                
+                GroupedCatalogs.Add(catalogGroup);
+            }
         }
 
         private void LoadCategoriesAndUnits()

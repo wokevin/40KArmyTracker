@@ -11,6 +11,7 @@
             <TextBlock Text="{Binding WelcomeText}" Style="{ThemeResource TitleTextBlockStyle}" />
             <TextBlock Text="Start by creating an army list, then add units and track points."
                        TextWrapping="Wrap" />
+            <Button Content="New Roster" Click="NewRoster_Click" Margin="0,12,0,0"/>
         </StackPanel>
     </Grid>
 </Page>

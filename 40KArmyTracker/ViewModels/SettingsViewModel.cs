@@ -14,7 +14,7 @@ namespace GW40KArmyTracker.ViewModels
         public SettingsViewModel()
         {
             _settings = AppSettings.Instance;
-            _dataSourceFolder = _settings.DataSourceFolder;
+            _dataSourceFolder = _settings.DefaultDataSourceFolder;
             _rostersSaveFolder = _settings.RostersSaveFolder;
             _defaultPointsLimit = _settings.DefaultPointsLimit;
 
@@ -100,7 +100,7 @@ namespace GW40KArmyTracker.ViewModels
 
         private void Save()
         {
-            _settings.DataSourceFolder = DataSourceFolder;
+            _settings.DefaultDataSourceFolder = DataSourceFolder;
             _settings.RostersSaveFolder = RostersSaveFolder;
             _settings.DefaultPointsLimit = DefaultPointsLimit;
             _settings.Save();

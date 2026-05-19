@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace GW40KArmyTracker.ViewModels
@@ -17,6 +19,7 @@ namespace GW40KArmyTracker.ViewModels
 
         public string RosterName { get; set; }
         public string ArmyName { get; set; }
+        public string SuperCategory { get; set; }  // NEW: Store the super category (Imperium/Chaos/Xenos)
 
         //  Set to a default sentinal value of -1 to indicate that the point limit has not been set.
         private int mPointLimit = -1;
@@ -45,10 +48,11 @@ namespace GW40KArmyTracker.ViewModels
 
         public int TotalPoints => mArmyList.Sum(selection => selection.Points * selection.Count);
 
-        public void CreateNewRoster(string rosterName, string armyName, int pointLimit)
+        public void CreateNewRoster(string rosterName, string armyName, string superCategory, int pointLimit)
         {
             RosterName = rosterName;
             ArmyName = armyName;
+            SuperCategory = superCategory;  // NEW: Store super category
             PointLimit = pointLimit;
             mArmyList.Clear();
         }
@@ -87,5 +91,33 @@ namespace GW40KArmyTracker.ViewModels
         }
 
         public int RemainingPoints => PointLimit >= 0 ? PointLimit - TotalPoints : -1;
+
+        public static ArmyRosterViewModel? LoadFromFile(string filePath)
+        {
+            if (!File.Exists(filePath))
+                return null;
+
+            try
+            {
+                string json = File.ReadAllText(filePath);
+                return JsonSerializer.Deserialize<ArmyRosterViewModel>(json);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public void SaveToFile(string filePath)
+        {
+            string? directory = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            string json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(filePath, json);
+        }
     }
 }

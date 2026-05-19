@@ -56,23 +56,39 @@
 
                 <ListView x:Name="CatalogListView"
                           Grid.Row="1" 
-                          ItemsSource="{Binding Catalogs}" 
-                          SelectionMode="Single"
-                          SelectionChanged="CatalogListView_SelectionChanged">
+                          ItemsSource="{Binding GroupedCatalogs}" 
+                          SelectionMode="None">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid Padding="8,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="13" />
-                                <TextBlock Grid.Column="1" 
-                                           Text="{Binding Units.Count}" 
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           FontSize="12"
-                                           Margin="8,0,0,0" />
-                            </Grid>
+                            <Expander HorizontalAlignment="Stretch" 
+                                      HorizontalContentAlignment="Stretch"
+                                      IsExpanded="True">
+                                <Expander.Header>
+                                    <TextBlock Text="{Binding SuperCategory}" 
+                                               FontWeight="Bold" 
+                                               FontSize="14"/>
+                                </Expander.Header>
+                                <ListView ItemsSource="{Binding Catalogs}" 
+                                          SelectionMode="Single"
+                                          SelectionChanged="CatalogListView_SelectionChanged">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Padding="20,10,8,10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="13" />
+                                                <TextBlock Grid.Column="1" 
+                                                           Text="{Binding Units.Count}" 
+                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                           FontSize="12"
+                                                           Margin="8,0,0,0" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Expander>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>

@@ -60,12 +60,10 @@ namespace GW40KArmyTracker.Services
                 _factionNames = new List<string>();
                 _factionNames.AddRange(GameSystemCategories.Values
                     .Where(c => c.IsFaction)
-                    .Select(c => c.Name)
+                    .Select(c => c.Name.Replace("Faction: ", "").Trim())
                     .Where(name => !string.IsNullOrEmpty(name))
                     .Distinct());
-
-//#TODO : Chaos needs to be handled better - how to get the God included...
-
+                //#TODO : Chaos needs to be handled better - how to get the God included...
             }
 
             return _factionNames;
@@ -229,10 +227,22 @@ namespace GW40KArmyTracker.Services
 
             XNamespace ns = root.Name.LocalName == "gameSystem" ? GstNs : CatNs;
 
+            string fullName = root.Attribute("name")?.Value ?? Path.GetFileNameWithoutExtension(filePath);
+            string superCategory = "Unknown";
+            string factionName = fullName;
+
+            if (fullName.Contains(" - "))
+            {
+                string[] parts = fullName.Split(new[] { " - " }, 2, StringSplitOptions.None);
+                superCategory = parts[0]; // "Xenos", "Imperium", "Chaos"
+                factionName = parts[1]; // "Necrons", "Space Marines"
+            }
+
             Catalog catalog = new()
             {
                 Id = root.Attribute("id")?.Value ?? Guid.NewGuid().ToString(),
-                Name = root.Attribute("name")?.Value ?? Path.GetFileNameWithoutExtension(filePath),
+                Name = factionName,
+                SuperCategory = superCategory,
                 FilePath = filePath,
                 IsGameSystem = root.Name.LocalName == "gameSystem"
             };

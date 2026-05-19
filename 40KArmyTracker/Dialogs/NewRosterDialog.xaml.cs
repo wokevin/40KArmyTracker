@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Xml.Serialization;
+using System.Linq;
+using System.Text.Json;
 using Microsoft.UI.Xaml.Controls;
 using GW40KArmyTracker.ViewModels;
 using GW40KArmyTracker.Services;
@@ -41,8 +42,16 @@ namespace GW40KArmyTracker.Dialogs
                 return;
             }
 
+            // Look up the super category for this army
+            AppSettings settings = AppSettings.Instance;
+            BattleScribeParser parser = BattleScribeParser.Instance;
+            List<Catalog> catalogs = parser.LoadCatalogsFromFolder(settings.DefaultDataSourceFolder);
+            Catalog? catalog = catalogs.FirstOrDefault(c => c.Name == armyName);
+            
+            string superCategory = catalog?.SuperCategory ?? "Unknown";
+
             ArmyRosterViewModel viewModel = new ArmyRosterViewModel();
-            viewModel.CreateNewRoster(rosterName, armyName, pointLimit);
+            viewModel.CreateNewRoster(rosterName, armyName, superCategory, pointLimit);
 
             SaveRoster(viewModel);
             proposedRoster = viewModel;
@@ -51,20 +60,18 @@ namespace GW40KArmyTracker.Dialogs
         private void SaveRoster(ArmyRosterViewModel roster)
         {
             string rostersFolder = AppSettings.Instance.RostersSaveFolder;
-            
+
             if (!Directory.Exists(rostersFolder))
             {
                 Directory.CreateDirectory(rostersFolder);
             }
 
-            string fileName = $"{roster.RosterName}_{DateTime.Now:yyyyMMdd_HHmmss}.xml";
+            string fileName = $"{roster.RosterName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             string filePath = Path.Combine(rostersFolder, fileName);
 
-            XmlSerializer serializer = new XmlSerializer(typeof(ArmyRosterViewModel));
-            using (StreamWriter writer = new StreamWriter(filePath))
-            {
-                serializer.Serialize(writer, roster);
-            }
+            JsonSerializerOptions options = new JsonSerializerOptions { WriteIndented = true };
+            string json = JsonSerializer.Serialize(roster, options);
+            File.WriteAllText(filePath, json);
         }
     }
 }

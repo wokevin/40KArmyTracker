@@ -1,13 +1,21 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace GW40KArmyTracker.Models
 {
+    public class CatalogGroup
+    {
+        public string SuperCategory { get; set; } = string.Empty;
+        public ObservableCollection<Catalog> Catalogs { get; set; } = new ObservableCollection<Catalog>();
+    }
+
     public class Catalog
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
         public bool IsGameSystem { get; set; }
+        public string SuperCategory { get; set; } = string.Empty;
         public List<Unit> Units { get; set; } = new();
         public List<Category> Categories { get; set; } = new();
         public List<UnitAbility> FactionRules { get; set; } = new();

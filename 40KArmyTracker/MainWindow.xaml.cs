@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using GW40KArmyTracker.Pages;
-using GW40KArmyTracker.Views;
 
 namespace GW40KArmyTracker
 {
@@ -12,11 +11,14 @@ namespace GW40KArmyTracker
             InitializeComponent();
         }
 
-        private void RootNavView_Loaded(object sender, RoutedEventArgs e)
+        private async void RootNavView_Loaded(object sender, RoutedEventArgs e)
         {
             // Default route
             RootNavView.SelectedItem = RootNavView.MenuItems[0];
             Navigate("home");
+
+            // Preload factions at startup
+            await Services.BattleScribeParser.Instance.GetFactionsAsync();
         }
 
         private void RootNavView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -38,7 +40,7 @@ namespace GW40KArmyTracker
             var pageType = tag switch
             {
                 "home" => typeof(HomePage),
-                "rosters" => typeof(RostersPage),
+                "rosters" => typeof(RosterEditorPage),
                 "armies" => typeof(ArmiesPage),
                 "units" => typeof(UnitsPage),
                 "settings" => typeof(SettingsPage),
