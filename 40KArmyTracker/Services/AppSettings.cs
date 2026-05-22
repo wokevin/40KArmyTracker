@@ -10,11 +10,11 @@ namespace GW40KArmyTracker.Services
         private static AppSettings? _instance;
         private static readonly object _lock = new object();
 
-        public string DefaultDataSourceFolder { get; set; } = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "data");
+        private static string AppDataPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GW40KArmyTracker");
+        public string DefaultDataSourceFolder { get; set; } = Path.Combine(AppDataPath, "data");
         public string RostersSaveFolder { get; set; } = string.Empty;
         public int DefaultPointsLimit { get; set; } = 2000;
 
-        private static string AppDataPath => Path.Combine( Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GW40KArmyTracker" );
         private static string SettingsFilePath => Path.Combine(AppDataPath, SettingsFileName);
         public static string DefaultRostersFolder => Path.Combine(AppDataPath, "Rosters");
 

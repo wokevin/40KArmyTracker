@@ -22,8 +22,12 @@ namespace GW40KArmyTracker.Pages
         private Catalog? _armyCatalog;
         private readonly ObservableCollection<ArmyRosterViewModel> savedRosters = new ObservableCollection<ArmyRosterViewModel>();
 
-        public ObservableCollection<Category> Categories { get; } = new ObservableCollection<Category>();
-        public ObservableCollection<Unit> AvailableUnits { get; } = new ObservableCollection<Unit>();
+        // Bucket collections - one for each category
+        public ObservableCollection<Unit> Characters { get; } = new ObservableCollection<Unit>();
+        public ObservableCollection<Unit> Vehicles { get; } = new ObservableCollection<Unit>();
+        public ObservableCollection<Unit> Squads { get; } = new ObservableCollection<Unit>();
+        public ObservableCollection<Unit> Infantry { get; } = new ObservableCollection<Unit>();
+        public ObservableCollection<Unit> Other { get; } = new ObservableCollection<Unit>();
         
         public string RosterName => _roster?.RosterName ?? string.Empty;
         public string ArmyName => _roster?.ArmyName ?? string.Empty;
@@ -68,53 +72,90 @@ namespace GW40KArmyTracker.Pages
 
         private void LoadArmyCatalog()
         {
+            if (_roster == null)
+                return;
+
             AppSettings settings = AppSettings.Instance;
-            BattleScribeParser parser = BattleScribeParser.Instance;
-            
-            System.Collections.Generic.List<Catalog> catalogs = 
-                parser.LoadCatalogsFromFolder(settings.DefaultDataSourceFolder);
-            
-            _armyCatalog = catalogs.FirstOrDefault(c => c.Name == _roster.ArmyName);
-            
-            if (_armyCatalog != null)
+            string dataFolder = settings.DefaultDataSourceFolder;
+
+            if (string.IsNullOrEmpty(dataFolder) || !Directory.Exists(dataFolder))
             {
-                Categories.Clear();
-                Categories.Add(new Category { Id = "all", Name = "All Units", IsFaction = false });
+                // Handle error
+                return;
+            }
+
+            // Load all catalogs
+            List<Catalog> catalogs = BattleScribeParser.Instance.LoadCatalogsFromFolder(dataFolder);
+
+            // Find the matching catalog
+            _armyCatalog = catalogs.FirstOrDefault(c =>
+                c.Name.Equals(_roster.ArmyName, StringComparison.OrdinalIgnoreCase));
+
+            if (_armyCatalog == null)
+                return;
+
+            LoadAvailableUnits();
+        }
+
+        private void LoadAvailableUnits()
+        {
+            // Clear all bucket collections
+            Characters.Clear();
+            Vehicles.Clear();
+            Squads.Clear();
+            Infantry.Clear();
+            Other.Clear();
+
+            if (_armyCatalog == null)
+            {
+                System.Diagnostics.Debug.WriteLine("_armyCatalog is null");
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"Found {_armyCatalog.Units.Count} units in catalog");
+
+            // Populate bucket collections based on unit keywords
+            foreach (Unit unit in _armyCatalog.Units)
+            {
+                System.Diagnostics.Debug.WriteLine($"Unit: {unit.Name}, Keywords: {string.Join(", ", unit.Keywords)}");
                 
-                foreach (Category cat in _armyCatalog.Categories)
+                string bucketName = GetBucketNameForUnit(unit);
+                System.Diagnostics.Debug.WriteLine($"  -> Bucket: {bucketName}");
+                
+                switch (bucketName)
                 {
-                    Categories.Add(cat);
+                    case "Characters":
+                        Characters.Add(unit);
+                        break;
+                    case "Vehicles":
+                        Vehicles.Add(unit);
+                        break;
+                    case "Squads":
+                        Squads.Add(unit);
+                        break;
+                    case "Infantry":
+                        Infantry.Add(unit);
+                        break;
+                    case "Other":
+                        Other.Add(unit);
+                        break;
                 }
-                
-                LoadAvailableUnits(null);
             }
+            
+            System.Diagnostics.Debug.WriteLine($"Populated buckets - Characters: {Characters.Count}, Vehicles: {Vehicles.Count}, Squads: {Squads.Count}, Infantry: {Infantry.Count}, Other: {Other.Count}");
         }
 
-        private void LoadAvailableUnits(Category? category)
+        private string GetBucketNameForUnit(Unit unit)
         {
-            AvailableUnits.Clear();
-            
-            if (_armyCatalog == null) return;
-            
-            System.Collections.Generic.IEnumerable<Unit> units = _armyCatalog.Units;
-            
-            if (category != null && category.Id != "all")
-            {
-                units = units.Where(u => u.CategoryIds.Contains(category.Id));
-            }
-            
-            foreach (Unit unit in units.OrderBy(u => u.Name))
-            {
-                AvailableUnits.Add(unit);
-            }
-        }
-
-        private void CategoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (sender is ListView listView && listView.SelectedItem is Category category)
-            {
-                LoadAvailableUnits(category);
-            }
+            if (unit.Keywords.Any(k => k.Contains("Character", StringComparison.OrdinalIgnoreCase)))
+                return "Characters";
+            if (unit.Keywords.Any(k => k.Contains("Vehicle", StringComparison.OrdinalIgnoreCase)))
+                return "Vehicles";
+            if (unit.Keywords.Any(k => k.Contains("Squad", StringComparison.OrdinalIgnoreCase)))
+                return "Squads";
+            if (unit.Keywords.Any(k => k.Contains("Infantry", StringComparison.OrdinalIgnoreCase)))
+                return "Infantry";
+            return "Other";
         }
 
         private void AddUnitButton_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
@@ -172,32 +213,19 @@ namespace GW40KArmyTracker.Pages
         {
             if (e.OriginalSource is FrameworkElement element && element.DataContext is Unit unit)
             {
-                ContentDialog dialog = new ContentDialog
-                {
-                    Title = unit.Name,
-                    CloseButtonText = "Close",
-                    XamlRoot = this.XamlRoot
-                };
+                ContentDialog dialog = new ContentDialog { Title = unit.Name, CloseButtonText = "Close", XamlRoot = this.XamlRoot };
                 
                 StackPanel content = new StackPanel { Spacing = 12 };
                 
                 // Add profiles (stat blocks)
                 foreach (UnitProfile profile in unit.Profiles)
                 {
-                    TextBlock profileTitle = new TextBlock 
-                    { 
-                        Text = $"{profile.Name} ({profile.TypeName})",
-                        FontWeight = FontWeights.Bold 
-                    };
+                    TextBlock profileTitle = new TextBlock { Text = $"{profile.Name} ({profile.TypeName})", FontWeight = FontWeights.Bold };
                     content.Children.Add(profileTitle);
                     
                     foreach (KeyValuePair<string, string> kvp in profile.Characteristics)
                     {
-                        TextBlock stat = new TextBlock 
-                        { 
-                            Text = $"{kvp.Key}: {kvp.Value}",
-                            Margin = new Thickness(12, 0, 0, 0)
-                        };
+                        TextBlock stat = new TextBlock { Text = $"{kvp.Key}: {kvp.Value}", Margin = new Thickness(12, 0, 0, 0) };
                         content.Children.Add(stat);
                     }
                 }
@@ -205,31 +233,17 @@ namespace GW40KArmyTracker.Pages
                 // Add abilities
                 if (unit.Abilities.Count > 0)
                 {
-                    TextBlock abilitiesTitle = new TextBlock 
-                    { 
-                        Text = "Abilities",
-                        FontWeight = FontWeights.Bold,
-                        Margin = new Thickness(0, 8, 0, 0)
-                    };
+                    TextBlock abilitiesTitle = new TextBlock { Text = "Abilities", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 8, 0, 0) };
                     content.Children.Add(abilitiesTitle);
                     
                     foreach (UnitAbility ability in unit.Abilities)
                     {
-                        TextBlock abilityText = new TextBlock 
-                        { 
-                            Text = $"{ability.Name}: {ability.Description}",
-                            TextWrapping = TextWrapping.Wrap,
-                            Margin = new Thickness(12, 4, 0, 0)
-                        };
+                        TextBlock abilityText = new TextBlock { Text = $"{ability.Name}: {ability.Description}", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(12, 4, 0, 0) };
                         content.Children.Add(abilityText);
                     }
                 }
                 
-                ScrollViewer scrollViewer = new ScrollViewer 
-                { 
-                    Content = content,
-                    MaxHeight = 500
-                };
+                ScrollViewer scrollViewer = new ScrollViewer {  Content = content, MaxHeight = 500 };
                 
                 dialog.Content = scrollViewer;
                 await dialog.ShowAsync();

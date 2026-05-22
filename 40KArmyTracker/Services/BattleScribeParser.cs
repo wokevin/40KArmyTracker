@@ -700,6 +700,36 @@ namespace GW40KArmyTracker.Services
             }
             return 0;
         }
+
+        private bool IsCharacter(Unit unit)
+        {
+            return unit.Keywords.Any(k => k.Contains("Character", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private bool IsVehicle(Unit unit)
+        {
+            return unit.Keywords.Any(k => k.Contains("Vehicle", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private bool IsSquad(Unit unit)
+        {
+            // Check for squad indicators in keywords
+            return unit.Keywords.Any(k => k.Contains("Squad", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private bool IsInfantry(Unit unit)
+        {
+            return unit.Keywords.Any(k => k.Contains("Infantry", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private string GetBucketName(Unit unit)
+        {
+            if (IsCharacter(unit)) return "Characters";
+            if (IsVehicle(unit)) return "Vehicles";
+            if (IsSquad(unit)) return "Squads";
+            if (IsInfantry(unit)) return "Infantry";
+            return "Other";
+        }
     }
     internal class PythonDataService
     {
